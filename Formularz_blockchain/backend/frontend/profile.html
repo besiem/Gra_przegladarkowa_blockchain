@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>User Profile</h1>
+    <nav>
+        <button onclick="window.location.href='profile.html'">Profile</button>
+        <button onclick="window.location.href='users.html'">Users</button>
+        <button onclick="window.location.href='minigame.html'">Minigame</button>
+        <button onclick="logout()">Logout</button>
+    </nav>
+    <div id="profileInfo">
+        <!-- Profile information will be displayed here -->
+    </div>
+    <div id="cryptos">
+        <h2>Owned Cryptocurrencies</h2>
+        <!-- Owned cryptocurrencies will be displayed here -->
+    </div>
+    <div id="quests">
+        <h2>Quests</h2>
+        <!-- Quest information will be displayed here -->
+    </div>
+
+    <script>
+        async function getProfile() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:3000/profile', {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                },
+            });
+            const profile = await response.json();
+            console.log('Profile:', profile); // Dodajemy logowanie do konsoli
+            document.getElementById('profileInfo').innerHTML = `
+                <p>Username: ${profile.username}</p>
+                <p>Account Created: ${new Date(profile.createdAt).toLocaleString()}</p>
+                <p>Total Value of Cryptocurrencies: $${profile.cryptocurrency.toFixed(2)}</p>
+            `;
+            displayCryptos(profile);
+            displayQuests(profile);
+        }
+
+        function displayCryptos(profile) {
+            const cryptoContainer = document.getElementById('cryptos');
+            const cryptos = profile.minedCryptos;
+            let table = `<table><tr><th>Cryptocurrency</th><th>Amount</th><th>Value ($)</th></tr>`;
+            let totalValue = 0;
+            for (const [crypto, data] of Object.entries(cryptos)) {
+                if (data.amount > 0) {
+                    const value = data.amount * data.value;
+                    totalValue += value;
+                    table += `<tr><td>${crypto}</td><td>${data.amount}</td><td>$${value.toFixed(2)}</td></tr>`;
+                }
+            }
+            table += `<tr><th>Total</th><th></th><th>$${totalValue.toFixed(2)}</th></tr></table>`;
+            cryptoContainer.innerHTML = table;
+        }
+
+        function displayQuests(profile) {
+            const questsContainer = document.getElementById('quests');
+            let quests = '';
+            let progress = 0;
+
+            if (profile.level === 1) {
+                progress = (profile.minedCryptos.Dogecoin.amount / 10) * 10;
+                quests = 'Mine cryptocurrencies worth $10 from level 1 to unlock level 2';
+            } else if (profile.level === 2) {
+                const progress1 = (profile.minedCryptos.Dogecoin.amount / 20) * 10;
+                const progress2 = (profile.minedCryptos.ShibaInu.amount / 50) * 10;
+                progress = Math.min(progress1, progress2);
+                quests = 'Mine cryptocurrencies worth $20 from level 1 and $50 from level 2 to unlock level 3';
+            } else if (profile.level === 3) {
+                const progress1 = (profile.minedCryptos.ShibaInu.amount / 100) * 100;
+                const progress2 = (profile.minedCryptos.TerraClassic.amount / 200) * 100;
+                progress = Math.min(progress1, progress2);
+                quests = 'Mine cryptocurrencies worth $100 from level 2 and $200 from level 3 to unlock level 4';
+            } else if (profile.level === 4) {
+                const progress1 = (profile.minedCryptos.TerraClassic.amount / 250) * 100;
+                const progress2 = (profile.minedCryptos.VeChain.amount / 400) * 100;
+                progress = Math.min(progress1, progress2);
+                quests = 'Mine cryptocurrencies worth $250 from level 3 and $400 from level 4 to unlock level 5';
+            } else {
+                quests = 'All levels unlocked!';
+            }
+
+            questsContainer.innerHTML = `
+                <p>${quests}</p>
+                <div class="progress-bar">
+                    <div class="progress" style="width: ${progress}%;"></div>
+                </div>
+            `;
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+
+        getProfile();
+    </script>
+</body>
+</html>

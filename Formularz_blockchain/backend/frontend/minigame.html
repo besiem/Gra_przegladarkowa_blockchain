@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minigame</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Minigame</h1>
+    <nav>
+        <button onclick="window.location.href='profile.html'">Profile</button>
+        <button onclick="window.location.href='users.html'">Users</button>
+        <button onclick="window.location.href='minigame.html'">Minigame</button>
+        <button onclick="logout()">Logout</button>
+    </nav>
+    <div id="levels">
+        <!-- Levels will be displayed here -->
+    </div>
+    <div id="loader" class="loader" style="display:none;"></div>
+
+    <script>
+        async function getUserLevel() {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:3000/profile', {
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                },
+            });
+            const profile = await response.json();
+            return profile.level;
+        }
+
+        async function createLevelButtons() {
+            const levels = 5;
+            const userLevel = await getUserLevel();
+            const levelsDiv = document.getElementById('levels');
+            for (let i = 1; i <= levels; i++) {
+                const levelDiv = document.createElement('div');
+                if (i > userLevel) {
+                    levelDiv.innerHTML = `<h3 style="color:gray;">Level ${i} (Locked)</h3>`;
+                } else {
+                    levelDiv.innerHTML = `<h3>Level ${i}</h3><button onclick="mineCrypto(${i})">Mine Crypto</button>`;
+                }
+                levelsDiv.appendChild(levelDiv);
+            }
+        }
+
+        async function mineCrypto(level) {
+            const token = localStorage.getItem('token');
+            document.getElementById('loader').style.display = 'block';
+            const response = await fetch('http://localhost:3000/mine', {
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ level }),
+            });
+            document.getElementById('loader').style.display = 'none';
+            const result = await response.text();
+            alert(result);
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'index.html';
+        }
+
+        createLevelButtons();
+    </script>
+</body>
+</html>
